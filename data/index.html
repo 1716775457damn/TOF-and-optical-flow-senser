@@ -4,83 +4,363 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>光流传感器仪表盘</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- 引入Chart.js库 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .data-section {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .data-section h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+        .value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .label {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .vector-canvas {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        .data-col {
+            flex: 1;
+            padding: 0 10px;
+        }
+        footer {
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .red { color: #e74c3c; }
+        .blue { color: #3498db; }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+        .connected {
+            background-color: #2ecc71;
+        }
+        .disconnected {
+            background-color: #e74c3c;
+        }
+        #connection-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>光流传感器仪表盘</h1>
-    </header>
-    
     <div class="container">
+        <h1>PV3953L1光流传感器仪表盘</h1>
+        
         <div class="card">
-            <h2>实时光流数据</h2>
+            <div class="data-section">
+                <h2>原始光流数据</h2>
+                <div class="data-grid">
+                    <div>
+                        <div class="label">X方向光流</div>
+                        <div id="raw-flow-x" class="value red">0</div>
+                    </div>
+                    <div>
+                        <div class="label">Y方向光流</div>
+                        <div id="raw-flow-y" class="value red">0</div>
+                    </div>
+                    <div>
+                        <div class="label">高度 (mm)</div>
+                        <div id="height" class="value">0.0</div>
+                    </div>
+                    <div>
+                        <div class="label">数据质量</div>
+                        <div id="quality" class="value">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <h2>处理后光流速度</h2>
+                <div class="data-grid">
+                    <div>
+                        <div class="label">X方向速度</div>
+                        <div id="proc-flow-x" class="value blue">0.0</div>
+                    </div>
+                    <div>
+                        <div class="label">Y方向速度</div>
+                        <div id="proc-flow-y" class="value blue">0.0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <h2>积分位移</h2>
+                <div class="data-grid">
+                    <div>
+                        <div class="label">X方向位移</div>
+                        <div id="disp-x" class="value">0.0</div>
+                    </div>
+                    <div>
+                        <div class="label">Y方向位移</div>
+                        <div id="disp-y" class="value">0.0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
             <div class="data-grid">
-                <div class="data-item">
-                    <div class="label">X方向光流:</div>
-                    <div id="flow-x" class="value">0</div>
+                <div>
+                    <h2>原始光流矢量</h2>
+                    <canvas id="raw-vector-canvas" class="vector-canvas" width="200" height="200"></canvas>
                 </div>
-                <div class="data-item">
-                    <div class="label">Y方向光流:</div>
-                    <div id="flow-y" class="value">0</div>
-                </div>
-                <div class="data-item">
-                    <div class="label">高度 (mm):</div>
-                    <div id="height" class="value">0.00</div>
-                </div>
-                <div class="data-item">
-                    <div class="label">数据质量:</div>
-                    <div id="quality" class="value">0</div>
-                </div>
-                <div class="data-item">
-                    <div class="label">更新时间:</div>
-                    <div id="timestamp" class="value">-</div>
+                <div>
+                    <h2>处理后光流矢量</h2>
+                    <canvas id="proc-vector-canvas" class="vector-canvas" width="200" height="200"></canvas>
                 </div>
             </div>
         </div>
         
-        <div class="card wide">
-            <h2>光流趋势图</h2>
-            <div class="chart-container">
-                <canvas id="flow-chart"></canvas>
-            </div>
+        <div id="connection-status">
+            WebSocket: <span id="ws-status">连接中...</span>
+            <span id="ws-indicator" class="status disconnected"></span>
         </div>
         
-        <div class="card wide">
-            <h2>高度趋势图</h2>
-            <div class="chart-container">
-                <canvas id="height-chart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>可视化光流方向</h2>
-            <div class="flow-visualization">
-                <canvas id="flow-vector" width="200" height="200"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>设置</h2>
-            <div class="settings">
-                <div class="setting-item">
-                    <label for="update-interval">数据刷新间隔 (ms):</label>
-                    <input type="number" id="update-interval" min="100" max="5000" step="100" value="500">
-                </div>
-                <div class="setting-item">
-                    <label for="chart-points">图表显示点数:</label>
-                    <input type="number" id="chart-points" min="10" max="200" step="10" value="50">
-                </div>
-                <button id="save-settings">保存设置</button>
-            </div>
-        </div>
+        <footer>
+            <p>ESP32-S3 PV3953L1光流传感器仪表盘 © 2024</p>
+        </footer>
     </div>
     
-    <footer>
-        <p>ESP32-S3 光流传感器仪表盘 &copy; 2024</p>
-    </footer>
-    
-    <script src="script.js"></script>
+    <script>
+        // 创建WebSocket连接
+        const wsUrl = `ws://${window.location.hostname}/ws`;
+        let websocket = new WebSocket(wsUrl);
+        let reconnectAttempt = 0;
+        
+        // WebSocket事件处理
+        websocket.onopen = function() {
+            console.log("WebSocket连接成功");
+            document.getElementById("ws-status").textContent = "已连接";
+            document.getElementById("ws-indicator").classList.replace("disconnected", "connected");
+            reconnectAttempt = 0;
+        };
+        
+        websocket.onclose = function() {
+            console.log("WebSocket连接关闭");
+            document.getElementById("ws-status").textContent = "已断开";
+            document.getElementById("ws-indicator").classList.replace("connected", "disconnected");
+            
+            // 尝试重连
+            reconnectAttempt++;
+            const delay = Math.min(1000 * reconnectAttempt, 10000); // 最多等待10秒
+            setTimeout(function() {
+                console.log("尝试重新连接WebSocket...");
+                websocket = new WebSocket(wsUrl);
+                setupWebSocket();
+            }, delay);
+        };
+        
+        websocket.onerror = function(event) {
+            console.error("WebSocket错误:", event);
+            document.getElementById("ws-status").textContent = "错误";
+        };
+        
+        websocket.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // 更新原始数据
+                document.getElementById("raw-flow-x").textContent = data.rx;
+                document.getElementById("raw-flow-y").textContent = data.ry;
+                document.getElementById("height").textContent = data.h;
+                document.getElementById("quality").textContent = data.q;
+                
+                // 更新处理后数据
+                document.getElementById("proc-flow-x").textContent = data.px.toFixed(2);
+                document.getElementById("proc-flow-y").textContent = data.py.toFixed(2);
+                document.getElementById("disp-x").textContent = data.dx.toFixed(2);
+                document.getElementById("disp-y").textContent = data.dy.toFixed(2);
+                
+                // 更新矢量图
+                drawVector("raw-vector-canvas", data.rx, data.ry, "#e74c3c");
+                drawVector("proc-vector-canvas", data.px, data.py, "#3498db");
+            } catch (e) {
+                console.error("解析WebSocket消息出错:", e);
+            }
+        };
+        
+        function setupWebSocket() {
+            websocket.onopen = function() {
+                console.log("WebSocket连接成功");
+                document.getElementById("ws-status").textContent = "已连接";
+                document.getElementById("ws-indicator").classList.replace("disconnected", "connected");
+                reconnectAttempt = 0;
+            };
+            
+            websocket.onclose = function() {
+                console.log("WebSocket连接关闭");
+                document.getElementById("ws-status").textContent = "已断开";
+                document.getElementById("ws-indicator").classList.replace("connected", "disconnected");
+                
+                // 尝试重连
+                reconnectAttempt++;
+                const delay = Math.min(1000 * reconnectAttempt, 10000); // 最多等待10秒
+                setTimeout(function() {
+                    console.log("尝试重新连接WebSocket...");
+                    websocket = new WebSocket(wsUrl);
+                    setupWebSocket();
+                }, delay);
+            };
+            
+            websocket.onerror = function(event) {
+                console.error("WebSocket错误:", event);
+                document.getElementById("ws-status").textContent = "错误";
+            };
+            
+            websocket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // 更新原始数据
+                    document.getElementById("raw-flow-x").textContent = data.rx;
+                    document.getElementById("raw-flow-y").textContent = data.ry;
+                    document.getElementById("height").textContent = data.h;
+                    document.getElementById("quality").textContent = data.q;
+                    
+                    // 更新处理后数据
+                    document.getElementById("proc-flow-x").textContent = data.px.toFixed(2);
+                    document.getElementById("proc-flow-y").textContent = data.py.toFixed(2);
+                    document.getElementById("disp-x").textContent = data.dx.toFixed(2);
+                    document.getElementById("disp-y").textContent = data.dy.toFixed(2);
+                    
+                    // 更新矢量图
+                    drawVector("raw-vector-canvas", data.rx, data.ry, "#e74c3c");
+                    drawVector("proc-vector-canvas", data.px, data.py, "#3498db");
+                } catch (e) {
+                    console.error("解析WebSocket消息出错:", e);
+                }
+            };
+        }
+        
+        // 绘制矢量图
+        function drawVector(canvasId, x, y, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // 缩放因子
+            const scale = 0.5;
+            
+            // 清除画布
+            ctx.clearRect(0, 0, width, height);
+            
+            // 画背景圆
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, Math.min(width, height) * 0.4, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.2)';
+            ctx.fill();
+            ctx.strokeStyle = '#ccc';
+            ctx.stroke();
+            
+            // 画中心点
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+            
+            // 计算矢量终点
+            const endX = centerX + x * scale;
+            const endY = centerY + y * scale;
+            
+            // 画线
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // 画箭头
+            const angle = Math.atan2(endY - centerY, endX - centerX);
+            const arrowSize = 10;
+            
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - arrowSize * Math.cos(angle - Math.PI / 6),
+                endY - arrowSize * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.lineTo(
+                endX - arrowSize * Math.cos(angle + Math.PI / 6),
+                endY - arrowSize * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            // 显示数值
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText(`(${Number(x).toFixed(1)}, ${Number(y).toFixed(1)})`, centerX, height - 10);
+        }
+        
+        // 初始绘制
+        drawVector('raw-vector-canvas', 0, 0, '#e74c3c');
+        drawVector('proc-vector-canvas', 0, 0, '#3498db');
+    </script>
 </body>
 </html> 

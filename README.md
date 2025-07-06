@@ -43,6 +43,7 @@
 ### 所需库
 
 - ESPAsyncWebServer
+- AsyncTCP
 - ArduinoJson
 - LittleFS
 
@@ -50,9 +51,24 @@
 
 1. 根据接线方式连接ESP32-S3和PV3953L1光流传感器模块
 2. 使用PlatformIO编译并上传代码到ESP32-S3
-3. ESP32-S3将自动创建名为"ESP32-S3-Flow"的WiFi接入点
-4. 使用手机或电脑连接此WiFi（密码：12345678）
-5. 在浏览器中访问 http://192.168.4.1 即可查看Web仪表盘
+   ```
+   platformio run --target upload
+   ```
+3. **重要步骤：同时编译并上传文件系统**
+   ```
+   platformio run -t upload -t uploadfs
+   ```
+   
+   如果上述命令执行失败，可以尝试分开执行：
+   ```
+   platformio run --target upload
+   platformio run --target uploadfs
+   ```
+4. ESP32-S3将自动创建名为"ESP32-S3-Flow"的WiFi接入点
+5. 使用手机或电脑连接此WiFi（密码：12345678）
+6. 在浏览器中访问 http://192.168.4.1 即可查看Web仪表盘
+
+**注意：** 如果没有显示网页，请确保已经上传了文件系统。通过串口监视器可以看到文件系统中是否存在网页文件。
 
 ## 数据协议说明
 
@@ -81,6 +97,12 @@ PV3953L1光流传感器数据包格式：
 - 用姿态角补偿积分位移
 - 对积分位移进行微分处理得到速度
 - 将数据单位转换为厘米
+
+## 故障排除
+
+1. **网页无法显示**：确保已执行`platformio run --target uploadfs`上传文件系统
+2. **无法连接WiFi**：重启ESP32-S3，确认串口输出中显示了"WiFi AP模式启动成功"
+3. **无法看到传感器数据**：检查接线，确保传感器供电正确（3.3V）
 
 ## 许可证
 
