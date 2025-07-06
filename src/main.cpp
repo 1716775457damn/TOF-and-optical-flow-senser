@@ -6,8 +6,8 @@
 #include <ArduinoJson.h>
 
 // 配置参数
-const char* ssid = "YOUR_WIFI_SSID";  // WiFi名称
-const char* password = "YOUR_WIFI_PASSWORD";  // WiFi密码
+const char* ssid = "ESP32-S3-Flow";  // AP名称
+const char* password = "12345678";  // AP密码
 
 // 光流传感器串口配置 - PV3953L1模块
 #define FLOW_SENSOR_RX 18  // ESP32-S3的RX引脚连接到光流模块的T（发送）
@@ -47,23 +47,25 @@ void initFS() {
   Serial.println("文件系统初始化成功");
 }
 
-// 连接WiFi
+// 设置AP模式WiFi
 void connectWiFi() {
-  Serial.print("连接到WiFi: ");
+  Serial.print("设置AP模式，SSID: ");
   Serial.println(ssid);
   
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  // 设置固定IP地址
+  IPAddress local_ip(192, 168, 4, 1);
+  IPAddress gateway(192, 168, 4, 1);
+  IPAddress subnet(255, 255, 255, 0);
   
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+  // 配置AP模式
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+  WiFi.softAP(ssid, password);
   
   Serial.println("");
-  Serial.println("WiFi连接成功");
+  Serial.println("WiFi AP模式启动成功");
   Serial.print("IP地址: ");
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.softAPIP());
 }
 
 // 解析光流数据 - 针对PV3953L1模块协议
@@ -214,22 +216,14 @@ void loop() {
     }
   }
   
-  // 如果WiFi断开，尝试重新连接
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi断开连接，尝试重新连接...");
-    WiFi.reconnect();
-    
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-      delay(500);
-      Serial.print(".");
-      attempts++;
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nWiFi重新连接成功");
-    } else {
-      Serial.println("\nWiFi重新连接失败");
+  // 检查AP是否正常运行
+  if (WiFi.softAPgetStationNum() >= 0) {
+    // 每10秒输出一次当前连接的设备数
+    static unsigned long lastCheck = 0;
+    if (millis() - lastCheck > 10000) {
+      Serial.print("当前连接设备数: ");
+      Serial.println(WiFi.softAPgetStationNum());
+      lastCheck = millis();
     }
   }
   
