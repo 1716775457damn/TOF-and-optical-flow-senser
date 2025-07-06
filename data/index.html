@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光流传感器仪表盘</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入Chart.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>光流传感器仪表盘</h1>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2>实时光流数据</h2>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="label">X方向光流:</div>
+                    <div id="flow-x" class="value">0</div>
+                </div>
+                <div class="data-item">
+                    <div class="label">Y方向光流:</div>
+                    <div id="flow-y" class="value">0</div>
+                </div>
+                <div class="data-item">
+                    <div class="label">高度 (mm):</div>
+                    <div id="height" class="value">0.00</div>
+                </div>
+                <div class="data-item">
+                    <div class="label">数据质量:</div>
+                    <div id="quality" class="value">0</div>
+                </div>
+                <div class="data-item">
+                    <div class="label">更新时间:</div>
+                    <div id="timestamp" class="value">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card wide">
+            <h2>光流趋势图</h2>
+            <div class="chart-container">
+                <canvas id="flow-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card wide">
+            <h2>高度趋势图</h2>
+            <div class="chart-container">
+                <canvas id="height-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>可视化光流方向</h2>
+            <div class="flow-visualization">
+                <canvas id="flow-vector" width="200" height="200"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>设置</h2>
+            <div class="settings">
+                <div class="setting-item">
+                    <label for="update-interval">数据刷新间隔 (ms):</label>
+                    <input type="number" id="update-interval" min="100" max="5000" step="100" value="500">
+                </div>
+                <div class="setting-item">
+                    <label for="chart-points">图表显示点数:</label>
+                    <input type="number" id="chart-points" min="10" max="200" step="10" value="50">
+                </div>
+                <button id="save-settings">保存设置</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>ESP32-S3 光流传感器仪表盘 &copy; 2024</p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
